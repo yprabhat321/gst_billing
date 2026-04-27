@@ -1,0 +1,11 @@
+package com.amanna.billingmanagement.infrastructure;
+
+// Reserved for future global CORS configuration.
+public final class CorsConfig {
+
+    private CorsConfig() {
+    }
+}
+
+
+

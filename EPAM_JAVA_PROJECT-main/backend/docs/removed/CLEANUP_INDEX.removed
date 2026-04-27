@@ -1,0 +1,10 @@
+Removed/archived artifacts index (hard cleanup)
+
+Canonical records:
+- ApplicationConfiguration_placeholder.removed
+- GlobalExceptionHandler_src_stub.removed
+- InvoiceId_placeholder.removed
+- README_roadmap_old.removed
+
+Legacy duplicate files are kept only for history and should point to this index.
+

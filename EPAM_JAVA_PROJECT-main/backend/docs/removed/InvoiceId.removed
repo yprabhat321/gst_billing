@@ -1,0 +1,4 @@
+Superseded archive record. See CLEANUP_INDEX.removed.
+Archived during simplification: Invoice now stores id as a plain String.
+
+

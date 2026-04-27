@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GST Billing Manager</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--surface:#fff;--border:#d3d1c7;--border2:#b4b2a9;
+  --text:#1a1a18;--muted:#5f5e5a;--hint:#888780;
+  --blue:#185FA5;--blue-bg:#E6F1FB;--blue-border:#B5D4F4;
+  --green:#3B6D11;--green-bg:#EAF3DE;
+  --amber:#854F0B;--amber-bg:#FAEEDA;
+  --red:#A32D2D;--red-bg:#FCEBEB;
+  --teal:#0F6E56;--teal-bg:#E1F5EE;
+  --r:8px;--rl:12px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.6}
+input,select,textarea,button{font-family:inherit;font-size:14px}
+a{color:var(--blue);text-decoration:none}
+
+/* layout */
+.sidebar{position:fixed;top:0;left:0;width:220px;height:100vh;background:var(--surface);border-right:0.5px solid var(--border);padding:0;display:flex;flex-direction:column;z-index:100}
+.logo{padding:20px 20px 16px;border-bottom:0.5px solid var(--border)}
+.logo h1{font-size:15px;font-weight:500;color:var(--text)}
+.logo p{font-size:11px;color:var(--muted);margin-top:2px}
+.nav{flex:1;padding:12px 0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;cursor:pointer;color:var(--muted);font-size:13px;transition:all .12s;border-left:2px solid transparent}
+.nav-item:hover{background:#f5f4f0;color:var(--text)}
+.nav-item.active{background:#f5f4f0;color:var(--blue);border-left-color:var(--blue);font-weight:500}
+.nav-icon{font-size:15px;width:18px;text-align:center}
+.nav-section{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--hint);padding:12px 20px 4px}
+.api-bar{padding:12px 16px;border-top:0.5px solid var(--border);display:flex;flex-direction:column;gap:6px}
+.api-label{font-size:10px;font-weight:500;color:var(--hint);text-transform:uppercase;letter-spacing:.05em}
+.api-input{border:0.5px solid var(--border2);border-radius:var(--r);padding:6px 8px;font-size:11px;width:100%;color:var(--text);background:var(--bg)}
+.api-input:focus{outline:none;border-color:var(--blue)}
+
+.main{margin-left:220px;min-height:100vh;padding:28px 32px}
+.page{display:none}.page.active{display:block}
+.page-header{margin-bottom:24px}
+.page-title{font-size:20px;font-weight:500;margin-bottom:4px}
+.page-desc{font-size:13px;color:var(--muted)}
+
+/* cards */
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:20px 24px;margin-bottom:16px}
+.card-sm{padding:14px 18px}
+.card-title{font-size:13px;font-weight:500;margin-bottom:14px;color:var(--text)}
+
+/* form */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+label{font-size:12px;font-weight:500;color:var(--muted)}
+input[type=text],input[type=number],input[type=date],select{border:0.5px solid var(--border2);border-radius:var(--r);padding:8px 10px;color:var(--text);background:var(--surface);width:100%;transition:border .12s}
+input:focus,select:focus{outline:none;border-color:var(--blue)}
+.hint{font-size:11px;color:var(--hint);margin-top:2px}
+
+/* buttons */
+.btn{border:0.5px solid var(--border2);border-radius:var(--r);padding:8px 16px;cursor:pointer;font-size:13px;font-weight:500;transition:all .12s;background:transparent;color:var(--text);display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--bg)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--text);color:#fff;border-color:var(--text)}
+.btn-primary:hover{background:#2c2c2a;color:#fff}
+.btn-green{background:var(--green-bg);color:var(--green);border-color:#C0DD97}
+.btn-red{background:var(--red-bg);color:var(--red);border-color:#F7C1C1}
+.btn-blue{background:var(--blue-bg);color:var(--blue);border-color:var(--blue-border)}
+.btn-sm{padding:5px 12px;font-size:12px}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+
+/* status badges */
+.badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:99px}
+.badge-DRAFT{background:var(--amber-bg);color:var(--amber)}
+.badge-ISSUED{background:var(--green-bg);color:var(--green)}
+.badge-CANCELLED{background:var(--red-bg);color:var(--red)}
+
+/* table */
+.table-wrap{overflow-x:auto;margin-top:2px}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:500;color:var(--muted);text-align:left;padding:8px 12px;border-bottom:0.5px solid var(--border);text-transform:uppercase;letter-spacing:.04em}
+td{padding:10px 12px;border-bottom:0.5px solid var(--border);font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafaf8}
+.clickable{cursor:pointer;color:var(--blue)}
+.clickable:hover{text-decoration:underline}
+
+/* line items */
+.line-items-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 40px;gap:8px;padding:6px 0;font-size:11px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--border);margin-bottom:8px}
+.line-item-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 40px;gap:8px;align-items:center;margin-bottom:8px}
+.line-item-row input{font-size:13px}
+
+/* summary box */
+.summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
+.summary-box{background:var(--bg);border-radius:var(--r);padding:10px 14px}
+.summary-box .label{font-size:11px;color:var(--muted);margin-bottom:2px}
+.summary-box .value{font-size:18px;font-weight:500;color:var(--text)}
+.summary-box .sub{font-size:11px;color:var(--hint)}
+
+/* alerts */
+.alert{border-radius:var(--r);padding:10px 14px;font-size:13px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px}
+.alert-error{background:var(--red-bg);color:var(--red);border:0.5px solid #F7C1C1}
+.alert-success{background:var(--green-bg);color:var(--green);border:0.5px solid #C0DD97}
+.alert-info{background:var(--blue-bg);color:var(--blue);border:0.5px solid var(--blue-border)}
+.hidden{display:none}
+
+/* invoice detail */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px 24px}
+.detail-row{padding:6px 0;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.detail-row:last-child{border-bottom:none}
+.detail-label{font-size:12px;color:var(--muted)}
+.detail-value{font-size:13px;font-weight:500;color:var(--text);text-align:right}
+
+/* filter bar */
+.filter-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.filter-bar select,.filter-bar input{width:auto;min-width:160px}
+
+/* spinner */
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
+.empty .icon{font-size:32px;margin-bottom:8px}
+.divider{border:none;border-top:0.5px solid var(--border);margin:16px 0}
+
+/* report */
+.report-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--rl);padding:20px 24px}
+.report-title{font-size:13px;font-weight:500;color:var(--muted);margin-bottom:4px}
+.report-value{font-size:28px;font-weight:500;color:var(--text)}
+.report-sub{font-size:12px;color:var(--hint);margin-top:2px}
+
+@media(max-width:700px){
+  .sidebar{width:100%;height:auto;position:relative;flex-direction:row;flex-wrap:wrap}
+  .main{margin-left:0;padding:16px}
+  .form-grid,.form-grid-3{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <h1>GST Billing</h1>
+    <p>Invoice Management System</p>
+  </div>
+  <nav class="nav">
+    <div class="nav-section">Invoices</div>
+    <div class="nav-item active" onclick="navigate('list')" id="nav-list"><span class="nav-icon">📋</span>All Invoices</div>
+    <div class="nav-item" onclick="navigate('create')" id="nav-create"><span class="nav-icon">➕</span>Create Invoice</div>
+    <div class="nav-section">Reports</div>
+    <div class="nav-item" onclick="navigate('report')" id="nav-report"><span class="nav-icon">📊</span>GST Summary</div>
+  </nav>
+  <div class="api-bar">
+    <div class="api-label">Backend URL</div>
+    <input class="api-input" id="api-base" value="https://forty-shrimps-juggle.loca.lt" placeholder="https://forty-shrimps-juggle.loca.lt">
+    <div style="font-size:10px;color:var(--hint);margin-top:2px">Change when deployed</div>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- LIST PAGE -->
+  <div id="page-list" class="page active">
+    <div class="page-header">
+      <div class="page-title">All Invoices</div>
+      <div class="page-desc">View, filter, issue, and cancel GST invoices</div>
+    </div>
+    <div class="filter-bar">
+      <select id="filter-status" onchange="loadInvoices()">
+        <option value="">All statuses</option>
+        <option value="DRAFT">Draft</option>
+        <option value="ISSUED">Issued</option>
+        <option value="CANCELLED">Cancelled</option>
+      </select>
+      <input type="text" id="filter-gstin" placeholder="Filter by customer GSTIN" style="min-width:220px">
+      <button class="btn btn-blue btn-sm" onclick="loadInvoices()">Search</button>
+      <button class="btn btn-sm" onclick="document.getElementById('filter-status').value='';document.getElementById('filter-gstin').value='';loadInvoices()">Clear</button>
+      <button class="btn btn-primary btn-sm" onclick="navigate('create')" style="margin-left:auto">+ New Invoice</button>
+    </div>
+    <div id="list-alert"></div>
+    <div class="card" style="padding:0">
+      <div id="list-loading" class="hidden" style="text-align:center;padding:24px"><div class="spin"></div></div>
+      <div id="list-empty" class="hidden empty"><div class="icon">📄</div>No invoices found</div>
+      <div class="table-wrap">
+        <table id="invoice-table">
+          <thead>
+            <tr>
+              <th>Invoice ID</th>
+              <th>Customer GSTIN</th>
+              <th>Seller GSTIN</th>
+              <th>Place of Supply</th>
+              <th>Taxable Amt</th>
+              <th>Total Amt</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="invoice-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- CREATE PAGE -->
+  <div id="page-create" class="page">
+    <div class="page-header">
+      <div class="page-title">Create Invoice</div>
+      <div class="page-desc">Draft a new GST invoice with line items</div>
+    </div>
+    <div id="create-alert"></div>
+    <div class="card">
+      <div class="card-title">Invoice Details</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Customer GSTIN *</label>
+          <input type="text" id="c-cgstin" placeholder="e.g. 07AABCU9603R1ZP">
+          <div class="hint">15-digit GST Identification Number of the buyer</div>
+        </div>
+        <div class="form-group">
+          <label>Seller GSTIN *</label>
+          <input type="text" id="c-sgstin" placeholder="e.g. 27AABCU9603R1ZP">
+          <div class="hint">15-digit GST Identification Number of the seller</div>
+        </div>
+        <div class="form-group">
+          <label>Place of Supply *</label>
+          <input type="text" id="c-pos" placeholder="e.g. 07 (Delhi) or 27 (Maharashtra)" maxlength="2">
+          <div class="hint">2-digit state code. Must match seller state for intra-state (CGST+SGST) else IGST applies</div>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="card-title" style="margin-bottom:10px">Line Items</div>
+      <div class="line-items-header">
+        <div>Description</div>
+        <div>HSN/SAC</div>
+        <div>Qty</div>
+        <div>Unit Price (₹)</div>
+        <div>GST Rate (%)</div>
+        <div></div>
+      </div>
+      <div id="line-items-container"></div>
+      <button class="btn btn-sm" onclick="addLineItem()" style="margin-top:8px">+ Add Line Item</button>
+    </div>
+
+    <div id="create-summary" class="card hidden">
+      <div class="card-title">Tax Preview</div>
+      <div class="summary-grid" id="summary-grid"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="createInvoice()">Create Draft Invoice</button>
+      <button class="btn" onclick="navigate('list')">Cancel</button>
+    </div>
+  </div>
+
+  <!-- DETAIL PAGE -->
+  <div id="page-detail" class="page">
+    <div class="page-header">
+      <button class="btn btn-sm" onclick="navigate('list')" style="margin-bottom:12px">← Back to list</button>
+      <div class="page-title" id="detail-title">Invoice Details</div>
+      <div id="detail-status-badge"></div>
+    </div>
+    <div id="detail-alert"></div>
+
+    <div class="card">
+      <div class="card-title">Invoice Information</div>
+      <div class="detail-grid">
+        <div>
+          <div class="detail-row"><span class="detail-label">Invoice ID</span><span class="detail-value" id="d-id"></span></div>
+          <div class="detail-row"><span class="detail-label">Customer GSTIN</span><span class="detail-value" id="d-cgstin"></span></div>
+          <div class="detail-row"><span class="detail-label">Seller GSTIN</span><span class="detail-value" id="d-sgstin"></span></div>
+          <div class="detail-row"><span class="detail-label">Place of Supply</span><span class="detail-value" id="d-pos"></span></div>
+          <div class="detail-row"><span class="detail-label">Supply Type</span><span class="detail-value" id="d-type"></span></div>
+        </div>
+        <div>
+          <div class="detail-row"><span class="detail-label">Status</span><span class="detail-value" id="d-status"></span></div>
+          <div class="detail-row"><span class="detail-label">Taxable Amount</span><span class="detail-value" id="d-taxable"></span></div>
+          <div class="detail-row"><span class="detail-label">CGST</span><span class="detail-value" id="d-cgst"></span></div>
+          <div class="detail-row"><span class="detail-label">SGST</span><span class="detail-value" id="d-sgst"></span></div>
+          <div class="detail-row"><span class="detail-label">IGST</span><span class="detail-value" id="d-igst"></span></div>
+          <div class="detail-row"><span class="detail-label">Total Tax</span><span class="detail-value" id="d-tax"></span></div>
+          <div class="detail-row"><span class="detail-label">Total Amount</span><span class="detail-value" id="d-total" style="font-size:16px;color:var(--blue)"></span></div>
+          <div class="detail-row"><span class="detail-label">Created At</span><span class="detail-value" id="d-created"></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Line Items</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Description</th><th>HSN/SAC</th><th>Qty</th><th>Unit Price</th><th>GST Rate</th><th>Taxable Amount</th></tr>
+          </thead>
+          <tbody id="detail-items"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="detail-actions" class="btn-row"></div>
+  </div>
+
+  <!-- REPORT PAGE -->
+  <div id="page-report" class="page">
+    <div class="page-header">
+      <div class="page-title">GST Summary Report</div>
+      <div class="page-desc">Aggregate tax collection for a date range</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Date Range</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>From Date</label>
+          <input type="date" id="r-from">
+        </div>
+        <div class="form-group">
+          <label>To Date</label>
+          <input type="date" id="r-to">
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="loadReport()">Generate Report</button>
+        <button class="btn btn-sm" onclick="exportCsv()">⬇ Export CSV</button>
+      </div>
+    </div>
+    <div id="report-alert"></div>
+    <div id="report-result" class="hidden">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:12px">
+        <div class="report-card"><div class="report-title">Invoices</div><div class="report-value" id="r-count">0</div><div class="report-sub">Total invoices</div></div>
+        <div class="report-card"><div class="report-title">Taxable Amount</div><div class="report-value" id="r-taxable">₹0</div><div class="report-sub">Before GST</div></div>
+        <div class="report-card"><div class="report-title">CGST</div><div class="report-value" id="r-cgst">₹0</div><div class="report-sub">Central GST</div></div>
+        <div class="report-card"><div class="report-title">SGST</div><div class="report-value" id="r-sgst">₹0</div><div class="report-sub">State GST</div></div>
+        <div class="report-card"><div class="report-title">IGST</div><div class="report-value" id="r-igst">₹0</div><div class="report-sub">Integrated GST</div></div>
+        <div class="report-card"><div class="report-title">Total Tax</div><div class="report-value" id="r-tax">₹0</div><div class="report-sub">All tax combined</div></div>
+        <div class="report-card" style="border:0.5px solid var(--blue-border);background:var(--blue-bg)"><div class="report-title" style="color:var(--blue)">Grand Total</div><div class="report-value" id="r-total">₹0</div><div class="report-sub">Including all taxes</div></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// --- API ---
+function base() { return document.getElementById('api-base').value.replace(/\/$/, ''); }
+
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Bypass-Tunnel-Reminder': 'true', 'ngrok-skip-browser-warning': 'true' }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(base() + path, opts);
+  const text = await res.text();
+  let data;
+  try { data = JSON.parse(text); } catch { data = text; }
+  if (!res.ok) {
+    const msg = (data && data.message) ? data.message : (data && data.error) ? data.error : text;
+    throw new Error(msg || `HTTP ${res.status}`);
+  }
+  return data;
+}
+
+// --- NAVIGATION ---
+let currentPage = 'list';
+function navigate(page, arg) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const navEl = document.getElementById('nav-' + (page === 'detail' ? 'list' : page));
+  if (navEl) navEl.classList.add('active');
+  currentPage = page;
+  if (page === 'list') loadInvoices();
+  if (page === 'create') initCreate();
+  if (page === 'detail' && arg) loadDetail(arg);
+  if (page === 'report') initReport();
+}
+
+// --- ALERT HELPERS ---
+function showAlert(containerId, type, msg) {
+  document.getElementById(containerId).innerHTML =
+    `<div class="alert alert-${type}"><span>${type === 'error' ? '⚠️' : type === 'success' ? '✓' : 'ℹ'}</span>${msg}</div>`;
+}
+function clearAlert(id) { document.getElementById(id).innerHTML = ''; }
+
+// --- INVOICE LIST ---
+async function loadInvoices() {
+  clearAlert('list-alert');
+  document.getElementById('list-loading').classList.remove('hidden');
+  document.getElementById('invoice-tbody').innerHTML = '';
+  document.getElementById('list-empty').classList.add('hidden');
+  const status = document.getElementById('filter-status').value;
+  const gstin = document.getElementById('filter-gstin').value;
+  let qs = [];
+  if (status) qs.push('status=' + status);
+  if (gstin.trim()) qs.push('customerGstin=' + encodeURIComponent(gstin.trim()));
+  try {
+    const invoices = await api('GET', '/api/v1/invoices' + (qs.length ? '?' + qs.join('&') : ''));
+    document.getElementById('list-loading').classList.add('hidden');
+    if (!invoices.length) { document.getElementById('list-empty').classList.remove('hidden'); return; }
+    document.getElementById('invoice-tbody').innerHTML = invoices.map(inv => `
+      <tr>
+        <td><span class="clickable" onclick="navigate('detail','${inv.id}')">${inv.id.slice(0,8)}…</span></td>
+        <td>${inv.customerGstin}</td>
+        <td>${inv.sellerGstin}</td>
+        <td>${inv.placeOfSupply}</td>
+        <td>₹${fmt(inv.taxableAmount)}</td>
+        <td>₹${fmt(inv.totalAmount)}</td>
+        <td><span class="badge badge-${inv.status}">${inv.status}</span></td>
+        <td>${fmtDate(inv.createdAt)}</td>
+        <td>
+          <button class="btn btn-sm btn-blue" onclick="navigate('detail','${inv.id}')">View</button>
+          ${inv.status === 'DRAFT' ? `<button class="btn btn-sm btn-green" onclick="quickIssue('${inv.id}')">Issue</button>` : ''}
+          ${inv.status !== 'CANCELLED' ? `<button class="btn btn-sm btn-red" onclick="quickCancel('${inv.id}')">Cancel</button>` : ''}
+        </td>
+      </tr>`).join('');
+  } catch (e) {
+    document.getElementById('list-loading').classList.add('hidden');
+    showAlert('list-alert', 'error', 'Failed to load invoices: ' + e.message + '. Is the backend running at ' + base() + '?');
+  }
+}
+
+async function quickIssue(id) {
+  try { await api('POST', `/api/v1/invoices/${id}/issue`); loadInvoices(); } catch (e) { showAlert('list-alert', 'error', e.message); }
+}
+async function quickCancel(id) {
+  if (!confirm('Cancel this invoice?')) return;
+  try { await api('POST', `/api/v1/invoices/${id}/cancel`); loadInvoices(); } catch (e) { showAlert('list-alert', 'error', e.message); }
+}
+
+// --- CREATE INVOICE ---
+let lineItemCount = 0;
+
+function initCreate() {
+  clearAlert('create-alert');
+  document.getElementById('c-cgstin').value = '';
+  document.getElementById('c-sgstin').value = '';
+  document.getElementById('c-pos').value = '';
+  document.getElementById('line-items-container').innerHTML = '';
+  lineItemCount = 0;
+  addLineItem();
+  document.getElementById('create-summary').classList.add('hidden');
+}
+
+function addLineItem() {
+  lineItemCount++;
+  const id = lineItemCount;
+  const div = document.createElement('div');
+  div.className = 'line-item-row';
+  div.id = 'li-' + id;
+  div.innerHTML = `
+    <input type="text" placeholder="e.g. Laptop Dell XPS" id="li-desc-${id}" oninput="calcPreview()">
+    <input type="text" placeholder="e.g. 8471" id="li-hsn-${id}" oninput="calcPreview()">
+    <input type="number" placeholder="1" min="0.01" step="0.01" id="li-qty-${id}" value="1" oninput="calcPreview()">
+    <input type="number" placeholder="1000.00" min="0.01" step="0.01" id="li-price-${id}" oninput="calcPreview()">
+    <input type="number" placeholder="18" min="0" max="28" step="0.01" id="li-gst-${id}" value="18" oninput="calcPreview()">
+    <button class="btn btn-sm" style="padding:5px;border-color:var(--red-bg);color:var(--red)" onclick="removeLineItem(${id})">✕</button>`;
+  document.getElementById('line-items-container').appendChild(div);
+}
+
+function removeLineItem(id) {
+  const el = document.getElementById('li-' + id);
+  if (el) el.remove();
+  calcPreview();
+}
+
+function calcPreview() {
+  const items = collectLineItems();
+  if (!items.length) { document.getElementById('create-summary').classList.add('hidden'); return; }
+  let taxable = 0, totalTax = 0;
+  items.forEach(it => {
+    const t = it.quantity * it.unitPrice;
+    taxable += t;
+    totalTax += t * (it.gstRate / 100);
+  });
+  document.getElementById('create-summary').classList.remove('hidden');
+  document.getElementById('summary-grid').innerHTML = `
+    <div class="summary-box"><div class="label">Taxable Amount</div><div class="value">₹${taxable.toFixed(2)}</div></div>
+    <div class="summary-box"><div class="label">Total Tax</div><div class="value">₹${totalTax.toFixed(2)}</div></div>
+    <div class="summary-box"><div class="label">Total Amount</div><div class="value">₹${(taxable + totalTax).toFixed(2)}</div></div>
+    <div class="summary-box"><div class="label">Items</div><div class="value">${items.length}</div></div>`;
+}
+
+function collectLineItems() {
+  const rows = document.querySelectorAll('.line-item-row');
+  const items = [];
+  rows.forEach(row => {
+    const id = row.id.replace('li-','');
+    const desc = document.getElementById('li-desc-'+id)?.value.trim();
+    const hsn  = document.getElementById('li-hsn-'+id)?.value.trim();
+    const qty  = parseFloat(document.getElementById('li-qty-'+id)?.value);
+    const price = parseFloat(document.getElementById('li-price-'+id)?.value);
+    const gst  = parseFloat(document.getElementById('li-gst-'+id)?.value);
+    if (desc && hsn && qty > 0 && price > 0 && gst >= 0) {
+      items.push({ description: desc, hsnSac: hsn, quantity: qty, unitPrice: price, gstRate: gst });
+    }
+  });
+  return items;
+}
+
+async function createInvoice() {
+  clearAlert('create-alert');
+  const cgstin = document.getElementById('c-cgstin').value.trim();
+  const sgstin = document.getElementById('c-sgstin').value.trim();
+  const pos    = document.getElementById('c-pos').value.trim();
+  const items  = collectLineItems();
+  if (!cgstin) return showAlert('create-alert', 'error', 'Customer GSTIN is required');
+  if (!sgstin) return showAlert('create-alert', 'error', 'Seller GSTIN is required');
+  if (!pos)    return showAlert('create-alert', 'error', 'Place of supply is required');
+  if (!items.length) return showAlert('create-alert', 'error', 'Add at least one valid line item');
+  try {
+    const result = await api('POST', '/api/v1/invoices', {
+      customerGstin: cgstin, sellerGstin: sgstin, placeOfSupply: pos, lineItems: items
+    });
+    navigate('detail', result.id);
+  } catch (e) {
+    showAlert('create-alert', 'error', 'Creation failed: ' + e.message);
+  }
+}
+
+// --- INVOICE DETAIL ---
+let currentInvoice = null;
+
+async function loadDetail(id) {
+  clearAlert('detail-alert');
+  try {
+    const inv = await api('GET', '/api/v1/invoices/' + id);
+    currentInvoice = inv;
+    document.getElementById('detail-title').textContent = 'Invoice ' + inv.id.slice(0, 8) + '…';
+    document.getElementById('detail-status-badge').innerHTML = `<span class="badge badge-${inv.status}">${inv.status}</span>`;
+    document.getElementById('d-id').textContent = inv.id;
+    document.getElementById('d-cgstin').textContent = inv.customerGstin;
+    document.getElementById('d-sgstin').textContent = inv.sellerGstin;
+    document.getElementById('d-pos').textContent = inv.placeOfSupply;
+    const isInterState = inv.sellerGstin.slice(0,2) !== inv.placeOfSupply;
+    document.getElementById('d-type').textContent = isInterState ? 'Inter-State (IGST)' : 'Intra-State (CGST+SGST)';
+    document.getElementById('d-status').innerHTML = `<span class="badge badge-${inv.status}">${inv.status}</span>`;
+    document.getElementById('d-taxable').textContent = '₹' + fmt(inv.taxableAmount);
+    document.getElementById('d-cgst').textContent = '₹' + fmt(inv.cgstAmount);
+    document.getElementById('d-sgst').textContent = '₹' + fmt(inv.sgstAmount);
+    document.getElementById('d-igst').textContent = '₹' + fmt(inv.igstAmount);
+    document.getElementById('d-tax').textContent = '₹' + fmt(inv.totalTaxAmount);
+    document.getElementById('d-total').textContent = '₹' + fmt(inv.totalAmount);
+    document.getElementById('d-created').textContent = fmtDate(inv.createdAt);
+    document.getElementById('detail-items').innerHTML = inv.lineItems.map(li => `
+      <tr>
+        <td>${li.description}</td>
+        <td>${li.hsnSac}</td>
+        <td>${li.quantity}</td>
+        <td>₹${fmt(li.unitPrice)}</td>
+        <td>${li.gstRate}%</td>
+        <td>₹${fmt(li.taxableAmount)}</td>
+      </tr>`).join('');
+    const actions = document.getElementById('detail-actions');
+    actions.innerHTML = '';
+    if (inv.status === 'DRAFT') {
+      actions.innerHTML += `<button class="btn btn-green" onclick="issueInvoice('${inv.id}')">✓ Issue Invoice</button>`;
+    }
+    if (inv.status !== 'CANCELLED') {
+      actions.innerHTML += `<button class="btn btn-red" onclick="cancelInvoice('${inv.id}')">✕ Cancel Invoice</button>`;
+    }
+  } catch (e) {
+    showAlert('detail-alert', 'error', 'Failed to load invoice: ' + e.message);
+  }
+}
+
+async function issueInvoice(id) {
+  clearAlert('detail-alert');
+  try {
+    const inv = await api('POST', `/api/v1/invoices/${id}/issue`);
+    loadDetail(id);
+    showAlert('detail-alert', 'success', 'Invoice issued successfully.');
+  } catch (e) { showAlert('detail-alert', 'error', e.message); }
+}
+
+async function cancelInvoice(id) {
+  if (!confirm('Are you sure you want to cancel this invoice?')) return;
+  clearAlert('detail-alert');
+  try {
+    await api('POST', `/api/v1/invoices/${id}/cancel`);
+    loadDetail(id);
+    showAlert('detail-alert', 'success', 'Invoice cancelled.');
+  } catch (e) { showAlert('detail-alert', 'error', e.message); }
+}
+
+// --- GST REPORT ---
+function initReport() {
+  const today = new Date().toISOString().slice(0, 10);
+  const firstDay = today.slice(0, 7) + '-01';
+  document.getElementById('r-from').value = firstDay;
+  document.getElementById('r-to').value = today;
+  document.getElementById('report-result').classList.add('hidden');
+  clearAlert('report-alert');
+}
+
+async function loadReport() {
+  clearAlert('report-alert');
+  const from = document.getElementById('r-from').value;
+  const to   = document.getElementById('r-to').value;
+  if (!from || !to) return showAlert('report-alert', 'error', 'Select both dates');
+  try {
+    const data = await api('GET', `/api/v1/reports/gst-summary?from=${from}&to=${to}`);
+    document.getElementById('r-count').textContent = data.invoiceCount;
+    document.getElementById('r-taxable').textContent = '₹' + fmt(data.taxableAmount);
+    document.getElementById('r-cgst').textContent = '₹' + fmt(data.cgstAmount);
+    document.getElementById('r-sgst').textContent = '₹' + fmt(data.sgstAmount);
+    document.getElementById('r-igst').textContent = '₹' + fmt(data.igstAmount);
+    document.getElementById('r-tax').textContent = '₹' + fmt(data.totalTaxAmount);
+    document.getElementById('r-total').textContent = '₹' + fmt(data.totalAmount);
+    document.getElementById('report-result').classList.remove('hidden');
+  } catch (e) { showAlert('report-alert', 'error', 'Report failed: ' + e.message); }
+}
+
+async function exportCsv() {
+  const from = document.getElementById('r-from').value;
+  const to   = document.getElementById('r-to').value;
+  if (!from || !to) return showAlert('report-alert', 'error', 'Select dates first');
+  window.open(`${base()}/api/v1/reports/gst-summary/export?from=${from}&to=${to}`, '_blank');
+}
+
+// --- UTILS ---
+function fmt(v) { return parseFloat(v || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function fmtDate(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) + ' ' +
+         d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
+// --- INIT ---
+loadInvoices();
+</script>
+</body>
+</html>

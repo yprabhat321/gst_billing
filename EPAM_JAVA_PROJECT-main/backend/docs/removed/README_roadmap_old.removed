@@ -1,0 +1,397 @@
+Archived to `docs/removed/README_roadmap_old.removed` during simplification.
+
+**Dependencies**
+- M01
+
+#### Milestone M03: README Roadmap and Delivery Contract
+**Objective**
+Set the end to end execution roadmap and delivery checkpoints.
+
+**Key Tasks**
+- Create sprint wise milestone plan in `backend/README.md`
+- Define definition of done per milestone
+- Define dependency map for milestone execution order
+
+**Deliverables**
+- Backend README with complete roadmap
+- Milestone dependency map
+
+**Dependencies**
+- M01
+
+### Sprint 2: Core Domain Model
+
+#### Milestone M04: Core Domain Vocabulary
+**Objective**
+Define canonical business language for GST billing domain.
+
+**Key Tasks**
+- Define entities such as Party, Product, Invoice, TaxRule
+- Define value objects such as GSTIN, Money, TaxRate, Address
+- Define aggregate boundaries and invariants
+
+**Deliverables**
+- Domain glossary
+- Entity and value object blueprint
+
+**Dependencies**
+- M02
+
+#### Milestone M05: Invoice Aggregate Design
+**Objective**
+Model invoice lifecycle and invariants.
+
+**Key Tasks**
+- Define invoice states as draft, issued, cancelled
+- Define line item behavior and total computation contracts
+- Define immutable snapshots for issued invoices
+
+**Deliverables**
+- Invoice aggregate design document
+- State transition rules
+
+**Dependencies**
+- M04
+
+#### Milestone M06: GST Rule Domain Services
+**Objective**
+Represent GST computation rules in domain services.
+
+**Key Tasks**
+- Define CGST, SGST, IGST selection rules
+- Define tax applicability by place of supply and party type
+- Define rounding strategy and tax component breakdown
+
+**Deliverables**
+- Tax rule service contracts
+- Rule specification examples
+
+**Dependencies**
+- M04
+
+### Sprint 3: Application Layer Use Cases
+
+#### Milestone M07: Use Case Ports and Commands
+**Objective**
+Design application ports for input and output boundaries.
+
+**Key Tasks**
+- Define command objects for create invoice, update invoice, issue invoice
+- Define query contracts for invoice lookup and summaries
+- Define output ports for persistence and document generation
+
+**Deliverables**
+- Use case contract set
+- Command and query model package
+
+**Dependencies**
+- M05
+
+#### Milestone M08: Invoice Creation and Update Use Cases
+**Objective**
+Implement core billing use cases with rule orchestration.
+
+**Key Tasks**
+- Implement create draft invoice use case
+- Implement add, edit, remove line item use cases
+- Trigger tax computation from domain service contracts
+
+**Deliverables**
+- Use case implementations
+- Unit tests for happy path and validation failures
+
+**Dependencies**
+- M06, M07
+
+#### Milestone M09: Invoice Issuance and Cancellation Use Cases
+**Objective**
+Handle finalization and controlled reversals.
+
+**Key Tasks**
+- Implement issue invoice use case with immutable snapshot logic
+- Implement cancellation rules with audit reason capture
+- Enforce state transition guards
+
+**Deliverables**
+- Issuance and cancellation services
+- State transition test coverage
+
+**Dependencies**
+- M08
+
+### Sprint 4: Persistence and Infrastructure
+
+#### Milestone M10: Persistence Strategy Without Flyway
+**Objective**
+Set schema lifecycle strategy and repository contracts.
+
+**Key Tasks**
+- Define manual SQL migration process and version folder pattern
+- Define repository interfaces in domain or application boundary
+- Define infrastructure implementations for repositories
+
+**Deliverables**
+- SQL migration playbook without Flyway
+- Repository interface catalog
+
+**Dependencies**
+- M07
+
+#### Milestone M11: Database Schema V1
+**Objective**
+Create initial relational schema for core aggregates.
+
+**Key Tasks**
+- Create tables for parties, products, invoices, invoice items, tax breakdown
+- Add constraints and indexes for query paths
+- Add referential integrity and status check constraints
+
+**Deliverables**
+- Schema SQL scripts V1
+- Local setup instructions
+
+**Dependencies**
+- M10
+
+#### Milestone M12: Repository Implementations and Mapping
+**Objective**
+Implement persistence adapters with strict model separation.
+
+**Key Tasks**
+- Implement repository adapters for invoice aggregate
+- Add mappers between persistence entities and domain models
+- Add transaction boundary handling in application services
+
+**Deliverables**
+- Working persistence adapters
+- Mapper and repository tests
+
+**Dependencies**
+- M11
+
+### Sprint 5: API and Validation
+
+#### Milestone M13: REST API Contract V1
+**Objective**
+Expose billing features through stable API endpoints.
+
+**Key Tasks**
+- Define endpoints for invoice CRUD and issuance actions
+- Define request response DTOs separated from domain models
+- Define error response model with consistent code structure
+
+**Deliverables**
+- API contract document
+- DTO package and controller skeleton
+
+**Dependencies**
+- M09, M12
+
+#### Milestone M14: Validation and Error Handling Layer
+**Objective**
+Ensure robust boundary validation and meaningful failures.
+
+**Key Tasks**
+- Add request validation for GSTIN, amounts, and mandatory fields
+- Add global exception handling and error mapping
+- Add domain error to API error translation
+
+**Deliverables**
+- Validation framework setup
+- Unified error handling implementation
+
+**Dependencies**
+- M13
+
+#### Milestone M15: API Integration Tests
+**Objective**
+Verify end to end behavior from API to persistence.
+
+**Key Tasks**
+- Add integration tests for invoice lifecycle endpoints
+- Add negative path tests for validation and state violations
+- Add test data fixtures and cleanup strategy
+
+**Deliverables**
+- Integration test suite
+- Endpoint behavior report
+
+**Dependencies**
+- M14
+
+### Sprint 6: Tax Intelligence and Reporting
+
+#### Milestone M16: Advanced GST Scenarios
+**Objective**
+Handle edge cases in tax logic and compliance details.
+
+**Key Tasks**
+- Add reverse charge handling hooks
+- Add exempt and zero rated item handling
+- Add mixed tax slab invoice calculations
+
+**Deliverables**
+- Extended tax rule implementations
+- Scenario based tests
+
+**Dependencies**
+- M06, M15
+
+#### Milestone M17: Tax Summary Services
+**Objective**
+Generate tax summaries for operational reporting.
+
+**Key Tasks**
+- Build monthly tax liability summary service
+- Build taxable value summaries by rate slab
+- Build invoice status summaries for finance tracking
+
+**Deliverables**
+- Summary service use cases
+- Query and projection models
+
+**Dependencies**
+- M16
+
+#### Milestone M18: Export Ready Data Endpoints
+**Objective**
+Expose data required for external filing workflows.
+
+**Key Tasks**
+- Add API endpoints for summary exports
+- Add CSV and JSON export formats from application layer
+- Add checksum and metadata fields for traceability
+
+**Deliverables**
+- Export endpoints and service adapters
+- Export contract tests
+
+**Dependencies**
+- M17
+
+### Sprint 7: Security, Audit, and Reliability
+
+#### Milestone M19: Authentication and Authorization Base
+**Objective**
+Protect APIs and enforce role based access.
+
+**Key Tasks**
+- Add auth middleware integration hooks
+- Define roles such as Admin, Accountant, Auditor
+- Restrict critical actions like issue and cancel invoice
+
+**Deliverables**
+- Access control policy document
+- Secured endpoint setup
+
+**Dependencies**
+- M13
+
+#### Milestone M20: Audit Trail and Change Logging
+**Objective**
+Track all material actions for compliance.
+
+**Key Tasks**
+- Log invoice creation, update, issuance, cancellation events
+- Store actor, timestamp, correlation id, change reason
+- Expose audit query endpoints for authorized roles
+
+**Deliverables**
+- Audit event model and storage
+- Audit retrieval APIs
+
+**Dependencies**
+- M19
+
+#### Milestone M21: Idempotency and Retry Safety
+**Objective**
+Prevent duplicate issuance and inconsistent state updates.
+
+**Key Tasks**
+- Add idempotency keys for critical write APIs
+- Add retry safe command handlers
+- Add optimistic locking where needed
+
+**Deliverables**
+- Idempotent critical operations
+- Concurrency test scenarios
+
+**Dependencies**
+- M20
+
+### Sprint 8: Quality, Observability, and Release
+
+#### Milestone M22: Test Pyramid Completion
+**Objective**
+Reach robust coverage across unit, integration, and contract tests.
+
+**Key Tasks**
+- Expand unit tests for domain rules and use cases
+- Expand integration tests for persistence and API
+- Add contract tests for external adapter boundaries
+
+**Deliverables**
+- Test coverage dashboard
+- Quality gate thresholds
+
+**Dependencies**
+- M21
+
+#### Milestone M23: Observability Baseline
+**Objective**
+Make system behavior measurable and diagnosable.
+
+**Key Tasks**
+- Add structured logging with correlation ids
+- Add metrics for invoice throughput and error rates
+- Add health probes and readiness checks
+
+**Deliverables**
+- Logging and metrics baseline
+- Operational health endpoints
+
+**Dependencies**
+- M22
+
+#### Milestone M24: Release Hardening and Documentation
+**Objective**
+Prepare backend for stable release and handover.
+
+**Key Tasks**
+- Add production configuration profiles
+- Run performance smoke tests for critical paths
+- Finalize developer onboarding and runbook docs
+
+**Deliverables**
+- Release checklist
+- Production readiness documentation
+
+**Dependencies**
+- M23
+
+## Dependency Chain Snapshot
+M01 -> M02 -> M04 -> M05 -> M07 -> M08 -> M09 -> M13 -> M14 -> M15 -> M16 -> M17 -> M18
+
+M01 -> M03
+
+M07 -> M10 -> M11 -> M12 -> M13
+
+M13 -> M19 -> M20 -> M21 -> M22 -> M23 -> M24
+
+## Immediate Execution Focus
+Current target is Sprint 1 with milestones M01, M02, and M03.
+
+Execution order for now
+1. Complete M01 backend bootstrap in `backend`
+2. Complete M02 module split and dependency rules
+3. Complete M03 README roadmap and done criteria
+
+## Definition of Done Template
+Each milestone is complete when all points are satisfied.
+- Code or document deliverables are created and reviewed
+- Unit or integration tests are added where applicable
+- Architecture and dependency rules are respected
+- No coupling violations across module boundaries
+- README and milestone tracker are updated
+
+

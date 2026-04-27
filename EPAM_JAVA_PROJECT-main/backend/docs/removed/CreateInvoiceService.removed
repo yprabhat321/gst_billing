@@ -1,0 +1,4 @@
+Removed during simplification.
+Controller now creates invoice directly via domain method.
+
+
